@@ -37,6 +37,24 @@ func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.User, erro
 	return &u, err
 }
 
+func (r *userRepo) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*model.User, error) {
+	if len(ids) == 0 {
+		return []*model.User{}, nil
+	}
+
+	query, args, err := sqlx.In(`SELECT * FROM users WHERE id IN (?) AND deactivated_at IS NULL`, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+
+	rows := []*model.User{}
+	if err := r.db.SelectContext(ctx, &rows, query, args...); err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var u model.User
 	err := r.db.GetContext(ctx, &u, `SELECT * FROM users WHERE email = $1 AND deactivated_at IS NULL`, email)

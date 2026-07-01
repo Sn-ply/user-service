@@ -27,6 +27,12 @@ func (m *MockUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*model.User, error) {
+	args := m.Called(ctx, ids)
+	users, _ := args.Get(0).([]*model.User)
+	return users, args.Error(1)
+}
+
 func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {

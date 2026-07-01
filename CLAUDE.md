@@ -16,6 +16,7 @@ Authentication and user profile management for Snaply. Go 1.22, port 8081, own P
 | POST   | /api/v1/auth/logout     | —                 | Revoke refresh token             |
 | GET    | /api/v1/users/search    | —                 | Cursor-paginated user search     |
 | PUT    | /api/v1/users/me        | X-User-ID header  | Update own profile               |
+| POST   | /api/v1/users/batch     | —                 | `{ids: [uuid,...]}` → `PublicProfile[]`, max 100 ids |
 | GET    | /api/v1/users/{username}| —                 | Public profile                   |
 | GET    | /health                 | —                 | Health check                     |
 
@@ -25,6 +26,8 @@ Authentication and user profile management for Snaply. Go 1.22, port 8081, own P
 - Migrations via `golang-migrate`, files in `migrations/`. Run with `make migrate-up`.
 - Downstream trust: this service does not re-validate JWTs from `api-gateway` requests where `X-User-ID` is already set — the gateway is the sole JWT boundary.
 - Tests use a hand-rolled `mock_repository.go` in `internal/service` (no mockgen).
+- `users.follower_count` / `users.following_count` are static columns that nothing updates — they exist from the original schema but predate `relation-service`. The frontend now sources live counts from `relation-service`'s `/counts` endpoint instead; treat these two columns as legacy/unused rather than a source of truth.
+- `/users/batch` exists specifically so other services (or the frontend) can resolve a list of user IDs to display profiles without each one needing its own identity logic — e.g. `relation-service` only stores IDs, and callers batch-resolve them here.
 
 ## Running
 

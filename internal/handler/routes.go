@@ -32,6 +32,7 @@ func NewRouter(auth service.AuthService, users service.UserService, log *zap.Log
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/search", userH.Search)
 			r.Put("/me", userH.UpdateMe)
+			r.Post("/batch", userH.Batch)
 			r.Get("/{username}", userH.GetProfile)
 		})
 	})

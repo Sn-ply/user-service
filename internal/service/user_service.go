@@ -30,6 +30,7 @@ type UserService interface {
 	GetProfile(ctx context.Context, username string) (*model.User, error)
 	UpdateProfile(ctx context.Context, userID uuid.UUID, input UpdateProfileInput) (*model.User, error)
 	Search(ctx context.Context, query string, cursor string, limit int) (*UserPage, error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*model.User, error)
 }
 
 type userService struct {
@@ -99,6 +100,14 @@ func (s *userService) Search(ctx context.Context, query string, cursorStr string
 	}
 
 	return page, nil
+}
+
+func (s *userService) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*model.User, error) {
+	users, err := s.users.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("fetching users: %w", err)
+	}
+	return users, nil
 }
 
 type cursorPayload struct {

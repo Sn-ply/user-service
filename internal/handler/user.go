@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/snaply/user-service/internal/model"
 	"github.com/snaply/user-service/internal/service"
 	"go.uber.org/zap"
 )
@@ -68,6 +69,43 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, user)
+}
+
+func (h *UserHandler) Batch(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if len(req.IDs) > 100 {
+		respondError(w, http.StatusBadRequest, "too many ids (max 100)")
+		return
+	}
+
+	ids := make([]uuid.UUID, 0, len(req.IDs))
+	for _, s := range req.IDs {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid id: "+s)
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	users, err := h.users.GetByIDs(r.Context(), ids)
+	if err != nil {
+		h.log.Error("batch get users error", zap.Error(err))
+		respondError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	profiles := make([]*model.PublicProfile, 0, len(users))
+	for _, u := range users {
+		profiles = append(profiles, u.ToPublicProfile())
+	}
+	respondJSON(w, http.StatusOK, profiles)
 }
 
 func (h *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
